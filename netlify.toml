@@ -8,10 +8,11 @@
   functions = "netlify/functions"
 
 [functions]
-  # Bundle the raw gallery images alongside the function so it can read them
-  # at runtime. Without this, the galleries/ folder is not shipped with the
-  # deployed function and image lookups would fail.
-  included_files = ["galleries/**"]
+  # Bundle the raw gallery images AND the client token map alongside the
+  # function so it can read them at runtime. Netlify only ships files listed
+  # here with the function; without this the galleries/ folder and
+  # clients.json are not deployed and lookups/auth would fail.
+  included_files = ["galleries/**", "clients.json"]
   # sharp ships prebuilt native binaries; mark it external so the bundler
   # does not try to inline it.
   external_node_modules = ["sharp"]
