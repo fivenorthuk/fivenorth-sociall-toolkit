@@ -1,0 +1,32 @@
+# Netlify configuration for the client gallery system.
+
+[build]
+  # No build step is required for the galleries themselves. We only need
+  # dependencies (sharp) installed so the function can generate thumbnails.
+  command = "echo 'No build step required'"
+  publish = "public"
+  functions = "netlify/functions"
+
+[functions]
+  # Bundle the raw gallery images alongside the function so it can read them
+  # at runtime. Without this, the galleries/ folder is not shipped with the
+  # deployed function and image lookups would fail.
+  included_files = ["galleries/**"]
+  # sharp ships prebuilt native binaries; mark it external so the bundler
+  # does not try to inline it.
+  external_node_modules = ["sharp"]
+
+# Pretty URL: /galleries/<client-name>?token=... is handled by the function.
+# The original query string (?token=abc-123) is preserved automatically.
+[[redirects]]
+  from = "/galleries/:client"
+  to = "/.netlify/functions/gallery?client=:client"
+  status = 200
+  force = true
+
+# Allow an optional trailing path form: /galleries/<client>/<file>
+[[redirects]]
+  from = "/galleries/:client/:file"
+  to = "/.netlify/functions/gallery?client=:client&file=:file"
+  status = 200
+  force = true

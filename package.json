@@ -1,0 +1,19 @@
+{
+  "name": "fivenorth-client-gallery",
+  "version": "1.0.0",
+  "description": "Token-protected client image galleries served from Netlify Functions.",
+  "private": true,
+  "scripts": {
+    "seed-samples": "node scripts/generate-sample-images.js",
+    "dev": "netlify dev"
+  },
+  "dependencies": {
+    "sharp": "^0.33.5"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
