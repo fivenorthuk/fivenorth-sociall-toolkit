@@ -1,4 +1,10 @@
 {
-  "crowther-key": "abc-123",
-  "acme-co": "xyz-789"
+  "crowther-key": {
+    "name": "Crowther Key",
+    "password": "abc-123"
+  },
+  "meller-speakman": {
+    "name": "Meller Speakman",
+    "password": "xyz-789"
+  }
 }
