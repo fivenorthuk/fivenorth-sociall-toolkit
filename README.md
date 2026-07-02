@@ -53,42 +53,47 @@ No local tools needed — do it all in the GitHub web UI:
 
 ## Adding / managing clients (names & passwords)
 
-Client display names and passwords live in **`clients.json`**:
+**Passwords are stored privately in the `CLIENT_TOKENS` environment variable in
+Netlify — not in this repo.** `clients.json` only lists which galleries exist
+and their display names:
 
 ```json
 {
-  "crowther-key": {
-    "name": "Crowther Key",
-    "password": "abc-123"
-  },
-  "meller-speakman": {
-    "name": "Meller Speakman",
-    "password": "xyz-789"
-  }
+  "crowther-key": { "name": "Crowther Key" },
+  "meller-speakman": { "name": "Meller Speakman" }
 }
 ```
 
-- **Add a client:** add an entry with their `name` and a `password`, create the
-  matching `galleries/<slug>/` folder (step 2 above), commit. Send them:
-  `https://galleries.fivenorth.co.uk/galleries/<slug>` + their password.
-- **Change / reset a password:** edit the `password` value and commit. Existing
-  sessions keep working until they expire (max 7 days); to force everyone out
-  immediately, rotate `SESSION_SECRET` (below).
-- **Rename a gallery:** edit the `name` value (the slug/URL stays the same).
+`CLIENT_TOKENS` holds the same structure **plus** each password, as one line of
+JSON (Netlify → Site settings → Environment variables → `CLIENT_TOKENS`):
 
-Generate strong passwords with e.g. `openssl rand -base64 9`.
+```json
+{"crowther-key":{"name":"Crowther Key","password":"…"},"meller-speakman":{"name":"Meller Speakman","password":"…"}}
+```
 
-> Tokens/passwords in `clients.json` are committed to git history. That's the
-> chosen trade-off for simplicity. To keep them out of git, set the
-> `CLIENT_TOKENS` environment variable in Netlify to the same JSON instead —
-> it overrides the file.
+When `CLIENT_TOKENS` is set it overrides `clients.json` entirely, so the real
+passwords never touch git.
+
+- **Add a client:** add them (with a password) to `CLIENT_TOKENS`, add a
+  name-only entry to `clients.json`, and create the `galleries/<slug>/` folder
+  (step 2 above). Send them `https://galleries.fivenorth.co.uk/galleries/<slug>`
+  + their password.
+- **Change / reset a password:** edit the value in `CLIENT_TOKENS` and save
+  (redeploys automatically). Existing sessions last until they expire (max 7
+  days); to force everyone to sign in again immediately, also rotate
+  `SESSION_SECRET`.
+- **Rename a gallery:** edit the `name` in both places (the slug/URL is
+  unchanged).
+
+Generate strong passwords with e.g. `openssl rand -base64 9`. (Or just ask
+Claude to add a client / rotate a password for you.)
 
 ## Environment variables (Netlify → Site settings → Environment variables)
 
 | Variable | Purpose | Required |
 | --- | --- | --- |
 | `SESSION_SECRET` | Signs the login session cookies (HMAC-SHA256). Set to a long random string, e.g. `openssl rand -hex 32`. | **Yes** |
-| `CLIENT_TOKENS` | Optional JSON of client config; overrides `clients.json` so secrets can stay out of git. | No |
+| `CLIENT_TOKENS` | JSON of client config **including passwords**; overrides `clients.json` so secrets stay out of git. In use. | **Yes** |
 
 Rotating `SESSION_SECRET` invalidates all existing client sessions (they'll be
 asked to sign in again).
