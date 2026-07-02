@@ -16,17 +16,13 @@
   # does not try to inline it.
   external_node_modules = ["sharp"]
 
-# Pretty URL: /galleries/<client-name>?token=... is handled by the function.
-# The original query string (?token=abc-123) is preserved automatically.
+# Pretty URL: /galleries/<client-name>[/<file>]?token=... is handled by the
+# function. The path segments are forwarded to the function via the splat and
+# parsed there (Netlify does not substitute :placeholders inside a destination
+# query string, so we route on the path, not on query params). The original
+# query string (?token=abc-123&mode=...) is preserved automatically.
 [[redirects]]
-  from = "/galleries/:client"
-  to = "/.netlify/functions/gallery?client=:client"
-  status = 200
-  force = true
-
-# Allow an optional trailing path form: /galleries/<client>/<file>
-[[redirects]]
-  from = "/galleries/:client/:file"
-  to = "/.netlify/functions/gallery?client=:client&file=:file"
+  from = "/galleries/*"
+  to = "/.netlify/functions/gallery/:splat"
   status = 200
   force = true

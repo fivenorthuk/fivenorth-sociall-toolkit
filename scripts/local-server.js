@@ -11,17 +11,15 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
   const qs = Object.fromEntries(url.searchParams.entries());
 
-  // Replicate: /galleries/:client  and  /galleries/:client/:file
-  const m = url.pathname.match(/^\/galleries\/([^/]+)(?:\/([^/]+))?$/);
-  if (!m) {
+  // Replicate the netlify.toml rewrite: /galleries/* forwards the path
+  // segments to the function, which reads client/file from event.path.
+  if (!url.pathname.startsWith('/galleries/')) {
     res.writeHead(404, { 'Content-Type': 'text/plain' });
     res.end('Not found. Try /galleries/crowther-key?token=abc-123');
     return;
   }
-  qs.client = decodeURIComponent(m[1]);
-  if (m[2]) qs.file = decodeURIComponent(m[2]);
 
-  const result = await handler({ queryStringParameters: qs });
+  const result = await handler({ path: url.pathname, queryStringParameters: qs });
   const body = result.isBase64Encoded
     ? Buffer.from(result.body, 'base64')
     : result.body;

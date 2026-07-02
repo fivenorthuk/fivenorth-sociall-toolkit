@@ -131,6 +131,37 @@ function sanitizeFilename(value) {
   return base;
 }
 
+/**
+ * Extract the client slug and (optional) filename from the request path.
+ *
+ * Netlify does NOT substitute redirect placeholders (`:client`) inside a
+ * destination query string, so we cannot rely on `?client=:client`. Instead
+ * the netlify.toml rewrite forwards the original path segments to the
+ * function and we read them here. This handles both the original request
+ * path (`/galleries/crowther-key/image1.png`) and the rewritten function
+ * path (`/.netlify/functions/gallery/crowther-key/image1.png`).
+ *
+ * Returns { client, file } where each may be undefined.
+ */
+function parsePath(event) {
+  const raw = event.path || (event.rawUrl ? new URL(event.rawUrl).pathname : '') || '';
+  const stripped = raw
+    .replace(/^\/\.netlify\/functions\/gallery/, '')
+    .replace(/^\/galleries/, '');
+  const segments = stripped.split('/').filter(Boolean);
+  const decode = (s) => {
+    try {
+      return decodeURIComponent(s);
+    } catch (_) {
+      return s;
+    }
+  };
+  return {
+    client: segments[0] ? decode(segments[0]) : undefined,
+    file: segments[1] ? decode(segments[1]) : undefined
+  };
+}
+
 /** Constant-time token comparison. */
 function tokensMatch(provided, expected) {
   if (typeof provided !== 'string' || typeof expected !== 'string') return false;
@@ -343,9 +374,15 @@ async function serveImage(filePath, mode, filename) {
 exports.handler = async (event) => {
   const params = event.queryStringParameters || {};
 
-  const client = sanitizeClient(params.client);
+  // The client and filename come from the URL path (see parsePath), falling
+  // back to query parameters for direct function invocation / local testing.
+  const fromPath = parsePath(event);
+  const clientRaw = params.client || fromPath.client;
+  const fileRaw = params.file || fromPath.file;
+
+  const client = sanitizeClient(clientRaw);
   const token = typeof params.token === 'string' ? params.token : '';
-  const file = params.file ? sanitizeFilename(params.file) : null;
+  const file = fileRaw ? sanitizeFilename(fileRaw) : null;
   const mode = ['thumb', 'full', 'download'].includes(params.mode) ? params.mode : 'full';
 
   if (!client) {
@@ -353,7 +390,7 @@ exports.handler = async (event) => {
   }
 
   // If a file was requested but failed sanitisation, reject it.
-  if (params.file && !file) {
+  if (fileRaw && !file) {
     return textResponse(400, 'Bad request: invalid file name.');
   }
 
